@@ -13,6 +13,41 @@ import logging
 # logger instance
 logger = logging.getLogger(__name__)
 
+class Graph():
+    """A class to deal with database connections"""
+    
+    host = "localhost"
+    user = "neo4j"
+    password = "neo4j"
+    http_port = 7474
+    https_port = 7473
+    bolt_port = 7687
+    bolt = None
+    
+    graph = None
+    
+    def __init__(self, **kwargs):
+        """Init class"""
+        
+        self.__set(**kwargs)
+        
+    def __set(self, **kwargs):
+        """Set class attributes"""
+        
+        for k, v in kwargs.iteritems():
+            setattr(self, k, v)
+        
+    def connect(self, **kwargs):
+        """connect to database"""
+        
+        self.__set(**kwargs)
+        
+        # get a connection
+        self.graph = py2neo.Graph(host=self.host, user=self.user, password=self.password, 
+                                    http_port=self.http_port, https_port=self.https_port,
+                                    bolt=self.bolt, bolt_port=self.bolt_port)
+        
+
 class Node():
     """A class to describe a single record in nodes.dmp
     
@@ -41,8 +76,8 @@ class Node():
     __attr_to_columns = {"tax_id":0, "parent": 1, "hidden_flag": 10, "rank":2}
     
     # the properties list
-    __properties = ["tax_id", "hidden_flag"]
-    __labels = ["rank"]
+    properties = ["tax_id", "hidden_flag", "rank"]
+    label = "Node"
     
     def __init__(self, record=None):
         """Initialize class. You could specify a row of nodes.dmp as a list"""
@@ -68,43 +103,54 @@ class Node():
     def getNeo4j(self):
         """Get a neo4j object"""
         
-        # define labels and properties
-        labels = [getattr(self, label) for label in self.__labels]
+        # define properties
         properties = {}
 
-        for key in self.__properties:
+        for key in self.properties:
             properties[key] = getattr(self, key)
         
-        node = py2neo.Node(*labels, **properties)
+        node = py2neo.Node(self.label, **properties)
         
         return node
         
-class Nodefile:
+class Nodefile(Graph):
     """Una classe per gestire il file nodes.dmp"""
     
-    def __init__(self, graph):
+    def __init__(self, **kwargs):
         """Instance the class. Need a py2neo Graph instance"""
         
-        if not isinstance(graph, py2neo.database.Graph):
-            raise Exception("Need a 'py2neo.database.Graph' instance")
-        
-        # set graph
-        self.graph = graph
+        Graph.__init__(self, **kwargs)
             
         # When do a transaction
-        self.iter = 100
+        self.iter = 1000
         
         # record relations in a dictionary (node -> parent)
         self.all_relations = {}
+
+    def check_index(self):
+        """Check that index are defined"""
+        
+        try:
+            constraints = self.graph.schema.get_uniqueness_constraints(Node.label)
+            
+        except AttributeError, message:
+            raise Exception("You need to connect to database before checking index: %s" %(message))
+            
+        if not "tax_id" in constraints:
+            self.graph.schema.create_uniqueness_constraint(Node.label,"tax_id")
     
-    def insertFrom(self, dmp_file="nodes.dmp", limit=None):
+    def insertFrom(self, dmp_file="nodes.dmp", limit=1000):
         """Open a file to read nodes"""
         
         # open a file in reading mode
         handle = open(dmp_file)
         
         # get a transaction
-        tx = self.graph.begin()
+        try:
+            tx = self.graph.begin()
+            
+        except AttributeError, message:
+            raise Exception("You need to connect to database before loading from file: %s" %(message))
         
         # debug
         logger.info("Adding nodes...")
@@ -119,12 +165,12 @@ class Nodefile:
             tx.create(neo_node)
             
             # record relationship
-            self.all_relations[(my_node.rank, my_node.tax_id)] = my_node.parent
+            self.all_relations[my_node.tax_id] = my_node.parent
 
             # test for limit
             if limit is not None and i >= (limit-1):
                 tx.commit()
-                logger.info("% limit reached. %s nodes added" %(limit, i+1))
+                logger.info("%s limit reached. %s nodes added" %(limit, i+1))
                 break
 
             # commit data
@@ -151,19 +197,21 @@ class Nodefile:
         # get a new transaction object
         tx = self.graph.begin()
         
-        for (rank, tax_id), parent_tax_id in self.all_relations.iteritems():
-            neo_nodes = selector.select(rank, tax_id=tax_id)
+        for tax_id, parent_tax_id in self.all_relations.iteritems():
+            neo_nodes = selector.select(Node.label, tax_id=tax_id)
             
+            # Reading from a list (tax_id are unique, so there are 1 results)
             for neo_node in list(neo_nodes):
                 # search parent
-                neo_parents = selector.select(tax_id=parent_tax_id)
+                neo_parents = selector.select(Node.label, tax_id=parent_tax_id)
                 
                 for neo_parent in neo_parents:
+                    count += 1
+                    
                     if neo_parent == neo_node:
                         logger.warn("Ignoring relationship between %s and %s" %(neo_node, neo_parent))
                         continue
                     
-                    count += 1
                     relationship = py2neo.Relationship(neo_parent, "PARENT", neo_node)
                     
                     # add it to database
@@ -172,13 +220,13 @@ class Nodefile:
             # commit
             if count % self.iter == 0:
                 tx.commit()
-                logger.debug("%s iterations added" %(count+1))
+                logger.debug("%s iterations processed" %(count))
                 tx = self.graph.begin()
                 
         # final transaction
         if count % self.iter != 0:
             tx.commit()
-            logger.debug("%s iterations added" %(count+1))
+            logger.debug("%s iterations processed" %(count))
             
         #debug
         logger.info("Completed!")
