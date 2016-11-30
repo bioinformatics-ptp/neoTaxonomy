@@ -14,11 +14,11 @@ __maintainer__ = "Paolo Cozzi"
 __email__ = "paolo.cozzi@ptp.it"
 __status__ = "alfa"
 
+from neotaxonomy.Neo4j import *
 
 # All libraries imported with import *
 __all__ = []
 
-
 # Example package with a console entry point
-def main():
-    print "Hello World"
+#def main():
+#    print "Hello World"
