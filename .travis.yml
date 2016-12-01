@@ -1,0 +1,25 @@
+sudo: required
+
+language: python
+
+services:
+  - docker
+
+before_install:
+  - docker run -d --publish=7474:7474 --publish=7687:7687 --name neo4j --env=NEO4J_AUTH=neo4j/password neo4j:3.0
+  
+python:
+  # - "2.6"
+  - "2.7"
+  # - "3.2"
+  # - "3.3"
+  # - "3.4"
+  # - "3.5"
+  # - "3.5-dev" # 3.5 development branch
+  # - "3.6-dev" # 3.6 development branch
+  # - "nightly" # currently points to 3.7-dev
+# command to install dependencies
+install:
+  - pip install .
+# command to run tests
+script: pytest
