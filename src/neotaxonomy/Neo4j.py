@@ -132,6 +132,8 @@ class TaxNode(TaxBase):
 class TaxNodefile(TaxGraph):
     """Una classe per gestire il file nodes.dmp"""
     
+    unique_index = "tax_id"
+    
     def __init__(self, **kwargs):
         """Instance the class. Need a py2neo Graph instance"""
         
@@ -143,17 +145,26 @@ class TaxNodefile(TaxGraph):
         # record relations in a dictionary (node -> parent)
         self.all_relations = {}
 
+    @property
+    def schema(self):
+        return self.graph.schema
+        
+    def get_uniqueness_constraints(self, label):
+        """get unique constraints"""
+        
+        return self.schema.get_uniqueness_constraints(label)
+
     def check_index(self):
         """Check that index are defined"""
         
         try:
-            constraints = self.graph.schema.get_uniqueness_constraints(TaxNode.label)
+            constraints = self.get_uniqueness_constraints(TaxNode.label)
             
         except AttributeError, message:
             raise Exception("You need to connect to database before checking index: %s" %(message))
             
-        if not "tax_id" in constraints:
-            self.graph.schema.create_uniqueness_constraint(TaxNode.label,"tax_id")
+        if not self.unique_index in constraints:
+            self.schema.create_uniqueness_constraint(TaxNode.label, self.unique_index)
     
     def insertFrom(self, dmp_file="nodes.dmp", limit=1000):
         """Open a file to read nodes"""
@@ -164,6 +175,7 @@ class TaxNodefile(TaxGraph):
         # get a transaction
         try:
             tx = self.graph.begin()
+            self.check_index()
             
         except AttributeError, message:
             raise Exception("You need to connect to database before loading from file: %s" %(message))
@@ -200,6 +212,9 @@ class TaxNodefile(TaxGraph):
         if (i+1) % self.iter != 0:
             tx.commit()
             logger.debug("%s nodes added" %(i+1))
+            
+        # closing file
+        handle.close()
         
         # get a selector
         selector = py2neo.NodeSelector(self.graph)
@@ -282,6 +297,8 @@ class TaxName(TaxBase):
 class TaxNamefile(TaxGraph):
     """Deal with name.dmp file"""
     
+    unique_index = "name_txt"
+    
     def __init__(self, **kwargs):
         """Instance the class. Need a py2neo Graph instance"""
         
@@ -289,18 +306,27 @@ class TaxNamefile(TaxGraph):
             
         # When do a transaction
         self.iter = 1000
+        
+    @property
+    def schema(self):
+        return self.graph.schema
+        
+    def get_uniqueness_constraints(self, label):
+        """get unique constraints"""
+        
+        return self.schema.get_uniqueness_constraints(label)
 
     def check_index(self):
         """Check that index are defined"""
         
         try:
-            constraints = self.graph.schema.get_uniqueness_constraints(TaxName.label)
+            constraints = self.get_uniqueness_constraints(TaxName.label)
             
         except AttributeError, message:
             raise Exception("You need to connect to database before checking index: %s" %(message))
             
-        if not "name_txt" in constraints:
-            self.graph.schema.create_uniqueness_constraint(TaxName.label,"name_txt")
+        if not self.unique_index in constraints:
+            self.graph.schema.create_uniqueness_constraint(TaxName.label, self.unique_index)
 
     def insertFrom(self, dmp_file="names.dmp", limit=1000):
         """Open a file to read names"""
@@ -311,6 +337,7 @@ class TaxNamefile(TaxGraph):
         # get a transaction
         try:
             tx = self.graph.begin()
+            self.check_index()
             
         except AttributeError, message:
             raise Exception("You need to connect to database before loading from file: %s" %(message))
