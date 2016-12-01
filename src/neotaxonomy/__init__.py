@@ -14,10 +14,10 @@ __maintainer__ = "Paolo Cozzi"
 __email__ = "paolo.cozzi@ptp.it"
 __status__ = "alfa"
 
-from neotaxonomy.Neo4j import *
+from neotaxonomy.Neo4j import TaxGraph, TaxNode, TaxNodefile, TaxName, TaxNamefile
 
 # All libraries imported with import *
-__all__ = []
+__all__ = ["TaxGraph", "TaxNode", "TaxNodefile", "TaxName", "TaxNamefile"]
 
 # Example package with a console entry point
 #def main():
