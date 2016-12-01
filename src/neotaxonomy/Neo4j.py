@@ -6,6 +6,7 @@ Created on Tue Nov 29 14:02:14 2016
 @author: Paolo Cozzi <paolo.cozzi@ptp.it>
 """
 
+import time
 import types
 import py2neo
 import logging
@@ -31,22 +32,53 @@ class TaxGraph():
         
         self.__set(**kwargs)
         
+        # in order to do reconnection
+        self.max_attempts = 3
+        self.time = 5
+        
     def __set(self, **kwargs):
         """Set class attributes"""
         
         for k, v in kwargs.iteritems():
             setattr(self, k, v)
+            
+    def __repr__(self):
+        """Return a string"""
+        
+        return "<{module}.TaxGraph(host='{host}', user='{user}')>".format(module=self.__module__, host=self.host, user=self.user)
         
     def connect(self, **kwargs):
         """connect to database"""
         
         self.__set(**kwargs)
         
-        # get a connection
-        self.graph = py2neo.Graph(host=self.host, user=self.user, password=self.password, 
-                                    http_port=self.http_port, https_port=self.https_port,
-                                    bolt=self.bolt, bolt_port=self.bolt_port)
- 
+        # test for connection
+        try:
+            # get a connection
+            self.graph = py2neo.Graph(host=self.host, user=self.user, password=self.password, 
+                                      http_port=self.http_port, https_port=self.https_port,
+                                      bolt=self.bolt, bolt_port=self.bolt_port)
+        
+            self.graph.schema.get_indexes(TaxNode.label)
+            
+        except Exception, message:
+            if kwargs.has_key("attempts"):
+                kwargs["attempts"] += 1
+
+            else:
+                kwargs["attempts"] = 1
+
+            logger.debug("Attempts done %s" %(kwargs["attempts"]))
+
+            if kwargs["attempts"] <= self.max_attempts:
+                logger.warn("Error while connecting to %s: %s" %(self.__repr__(), message))
+                logger.warn("retring in %s seconds" %(self.time))
+                time.sleep(self.time)
+                self.connect(**kwargs)
+                
+            else:
+                raise Exception("Max attempts reached: %s" %(message))
+            
 
 class TaxBase():
     """Base class for taxonomy elements"""

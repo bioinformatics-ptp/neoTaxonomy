@@ -30,9 +30,14 @@ class TaxGraphTest(unittest.TestCase):
     """A class to test Graph connection classes"""
     
     def test_connect(self):
-       taxgraph = neotaxonomy.TaxGraph(host="localhost")
-       taxgraph.connect(user="neo4j", password="password")
-       self.assertIsInstance(taxgraph.graph, py2neo.database.Graph)
+        taxgraph = neotaxonomy.TaxGraph(host="localhost")
+        taxgraph.connect(user="neo4j", password="password")
+        self.assertIsInstance(taxgraph.graph, py2neo.database.Graph)
+       
+    def test_noConnect(self):
+        taxgraph = neotaxonomy.TaxGraph(host="localhost")
+        taxgraph.max_attempts = 1
+        self.assertRaisesRegexp(Exception, "Max attempts reached", taxgraph.connect, user="neo4j", password="neo4j")
        
 class TaxNodefileTest(unittest.TestCase):
     """A class to test data load"""
