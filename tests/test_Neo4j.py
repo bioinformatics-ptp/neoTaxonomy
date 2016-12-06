@@ -40,24 +40,24 @@ class TaxGraphTest(unittest.TestCase):
         self.assertRaisesRegexp(Exception, "Max attempts reached", taxgraph.connect, user="neo4j", password="neo4j")
        
 class TaxNodefileTest(unittest.TestCase):
-    """A class to test data load"""
+    """A class to test node data load"""
     
-    tax_nodefile = None
+    neo = None
     test_nodefile = os.path.join(current_path, "test_nodes.dmp")
     
     def setUp(self):
-        self.tax_nodefile = neotaxonomy.TaxNodefile(host="localhost", user="neo4j", password="password")
-        self.tax_nodefile.connect()
+        self.neo = neotaxonomy.TaxNodefile(host="localhost", user="neo4j", password="password")
+        self.neo.connect()
         
         # change number of iterations
-        self.tax_nodefile.iter = 5
+        self.neo.iter = 5
         
     def tearDown(self):
-        self.tax_nodefile.graph.delete_all()
+        self.neo.graph.delete_all()
         
         # drop indexes if they exists
         try:
-            self.tax_nodefile.schema.drop_uniqueness_constraint(neotaxonomy.TaxNode.label, neotaxonomy.TaxNodefile.unique_index)
+            self.neo.schema.drop_uniqueness_constraint(neotaxonomy.TaxNode.label, neotaxonomy.TaxNodefile.unique_index)
             
         except py2neo.GraphError, message:
             if "No such unique constraint" not in message.__str__():
@@ -65,24 +65,73 @@ class TaxNodefileTest(unittest.TestCase):
         
     def test_noConnection(self):
         # create a local instance
-        tax_nodefile = neotaxonomy.TaxNodefile(host="localhost", user="neo4j", password="password")
-        self.assertRaisesRegexp(Exception, "You need to connect to database before checking index", tax_nodefile.check_index)
-        self.assertRaisesRegexp(Exception, "You need to connect to database before loading from file", tax_nodefile.insertFrom, self.test_nodefile)
+        neo = neotaxonomy.TaxNodefile(host="localhost", user="neo4j", password="password")
+        self.assertRaisesRegexp(Exception, "You need to connect to database before checking index", neo.check_index)
+        self.assertRaisesRegexp(Exception, "You need to connect to database before loading from file", neo.insertFrom, self.test_nodefile)
         
         
     def test_insertFrom(self):
-        self.tax_nodefile.insertFrom(self.test_nodefile)
+        self.neo.insertFrom(self.test_nodefile)
         
         ref_nodes = file_len(self.test_nodefile)
-        test_nodes = len(list(self.tax_nodefile.graph.find(neotaxonomy.TaxNode.label)))
+        test_nodes = len(list(self.neo.graph.find(neotaxonomy.TaxNode.label)))
         self.assertEqual(ref_nodes, test_nodes)
         
     def test_insertFromLimit(self):
-        self.tax_nodefile.insertFrom(self.test_nodefile, limit=5)
-        test_nodes = len(list(self.tax_nodefile.graph.find(neotaxonomy.TaxNode.label)))
+        self.neo.insertFrom(self.test_nodefile, limit=5)
+        test_nodes = len(list(self.neo.graph.find(neotaxonomy.TaxNode.label)))
         self.assertEqual(5, test_nodes)
         
+class TaxNamefileTest(unittest.TestCase):
+    """A class to test node data load"""
+    
+    neo = None
+    test_namefile = os.path.join(current_path, "test_names.dmp")
+    test_nodefile = os.path.join(current_path, "test_nodes.dmp")
+    
+    def setUp(self):
+        # insert nodes before names
+        neo = neotaxonomy.TaxNodefile(host="localhost", user="neo4j", password="password")
+        neo.connect()
+        neo.insertFrom(self.test_nodefile)
         
+        # Ok now instantiate the object
+        self.neo = neotaxonomy.TaxNamefile(host="localhost", user="neo4j", password="password")
+        self.neo.connect()
+        
+        # change number of iterations
+        self.neo.iter = 5
+        
+    def tearDown(self):
+        self.neo.graph.delete_all()
+        
+        # drop indexes if they exists
+        try:
+            self.neo.schema.drop_uniqueness_constraint(neotaxonomy.TaxNode.label, neotaxonomy.TaxNodefile.unique_index)
+            
+        except py2neo.GraphError, message:
+            if "No such unique constraint" not in message.__str__():
+                raise py2neo.GraphError, message
+                
+    def test_noConnection(self):
+        # create a local instance
+        neo = neotaxonomy.TaxNamefile(host="localhost", user="neo4j", password="password")
+        self.assertRaisesRegexp(Exception, "You need to connect to database before checking index", neo.check_index)
+        self.assertRaisesRegexp(Exception, "You need to connect to database before loading from file", neo.insertFrom, self.test_namefile)
+        
+        
+    def test_insertFrom(self):
+        self.neo.insertFrom(self.test_namefile)
+        
+        ref_nodes = file_len(self.test_namefile)
+        test_nodes = len(list(self.neo.graph.find(neotaxonomy.TaxName.label)))
+        self.assertEqual(ref_nodes, test_nodes)
+        
+    def test_insertFromLimit(self):
+        self.neo.insertFrom(self.test_namefile, limit=5)
+        test_nodes = len(list(self.neo.graph.find(neotaxonomy.TaxName.label)))
+        self.assertEqual(5, test_nodes)
+    
 # testing library
 if __name__ == "__main__":
     unittest.main()

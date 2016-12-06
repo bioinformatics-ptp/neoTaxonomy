@@ -196,6 +196,7 @@ class TaxNodefile(TaxGraph):
             raise Exception("You need to connect to database before checking index: %s" %(message))
             
         if not self.unique_index in constraints:
+            logger.debug("Creating unique index ({label},{property_key})".format(label=TaxNode.label, property_key=self.unique_index))
             self.schema.create_uniqueness_constraint(TaxNode.label, self.unique_index)
     
     def insertFrom(self, dmp_file="nodes.dmp", limit=1000):
@@ -329,7 +330,7 @@ class TaxName(TaxBase):
 class TaxNamefile(TaxGraph):
     """Deal with name.dmp file"""
     
-    unique_index = "name_txt"
+    indexes = ["name_txt", "unique_name"] 
     
     def __init__(self, **kwargs):
         """Instance the class. Need a py2neo Graph instance"""
@@ -343,22 +344,25 @@ class TaxNamefile(TaxGraph):
     def schema(self):
         return self.graph.schema
         
-    def get_uniqueness_constraints(self, label):
-        """get unique constraints"""
+    def get_indexes(self, label):
+        """Get defined indexes"""
         
-        return self.schema.get_uniqueness_constraints(label)
+        return self.schema.get_indexes(label)
 
     def check_index(self):
         """Check that index are defined"""
         
         try:
-            constraints = self.get_uniqueness_constraints(TaxName.label)
+            indexes = self.get_indexes(TaxName.label)
             
         except AttributeError, message:
             raise Exception("You need to connect to database before checking index: %s" %(message))
-            
-        if not self.unique_index in constraints:
-            self.graph.schema.create_uniqueness_constraint(TaxName.label, self.unique_index)
+        
+        # check and create each name index. Pay attention that indexes contains unique constraints
+        for index in self.indexes:
+            if not index in indexes:
+                logger.debug("Creating index ({label},{property_key})".format(label=TaxName.label, property_key=index))
+                self.schema.create_index(TaxName.label, index)
 
     def insertFrom(self, dmp_file="names.dmp", limit=1000):
         """Open a file to read names"""
@@ -398,7 +402,13 @@ class TaxNamefile(TaxGraph):
             # Reading from a list (tax_id are unique, so there are 1 results)
             for neo_node in list(neo_nodes):
                 # Now add a relationship
-                relationship = py2neo.Relationship(neo_node, relationship_name, neo_name)
+                try:
+                    relationship = py2neo.Relationship(neo_node, relationship_name, neo_name)
+                    
+                except py2neo.ConstraintError, message:
+                    logger.error("Error for {node}-{relationship}->{name}".format(node=neo_node, relationship=relationship_name, name=neo_name))
+                    tx.rollback()
+                    raise py2neo.ConstraintError(message)
                     
                 # add it to database
                 tx.create(relationship)
