@@ -11,6 +11,8 @@ import types
 import py2neo
 import logging
 
+from neotaxonomy.exceptions import NeoTaxonomyError, TaxGraphError
+
 # logger instance
 logger = logging.getLogger(__name__)
 
@@ -77,7 +79,7 @@ class TaxGraph():
                 self.connect(**kwargs)
                 
             else:
-                raise Exception("Max attempts reached: %s" %(message))
+                raise TaxGraphError("Max attempts reached: %s" %(message))
             
 
 class TaxBase():
@@ -193,7 +195,7 @@ class TaxNodefile(TaxGraph):
             constraints = self.get_uniqueness_constraints(TaxNode.label)
             
         except AttributeError, message:
-            raise Exception("You need to connect to database before checking index: %s" %(message))
+            raise TaxGraphError("You need to connect to database before checking index: %s" %(message))
             
         if not self.unique_index in constraints:
             logger.debug("Creating unique index ({label},{property_key})".format(label=TaxNode.label, property_key=self.unique_index))
@@ -211,7 +213,7 @@ class TaxNodefile(TaxGraph):
             self.check_index()
             
         except AttributeError, message:
-            raise Exception("You need to connect to database before loading from file: %s" %(message))
+            raise TaxGraphError("You need to connect to database before loading from file: %s" %(message))
         
         # debug
         logger.info("Adding nodes...")
@@ -309,18 +311,29 @@ class TaxName(TaxBase):
     name_txt = None
     unique_name = None
     name_class = None
+    index = None
     
     # a dictionary in which atrtribute per coulmn index is defined
     attr_to_columns = {"tax_id":0, "name_txt": 1, "unique_name": 2, "name_class":3}
     
     # the properties list
-    properties = ["name_txt", "unique_name"]
+    properties = ["name_txt", "unique_name", "index"]
     label = "TaxName"
     
     def __init__(self, record=None):
         """Initialize class. You could specify a row of nodes.dmp as a list"""
         
         TaxBase.__init__(self, record)
+        
+        # add new property
+        if self.unique_name == '':
+            index = (self.tax_id, self.name_txt)
+        
+        else:
+            index = (self.tax_id, self.unique_name)
+        
+        # create an unique index as (tax_id, name)
+        self.index = str(index)
         
     def __repr__(self):
         """Return a string"""
@@ -330,7 +343,9 @@ class TaxName(TaxBase):
 class TaxNamefile(TaxGraph):
     """Deal with name.dmp file"""
     
-    indexes = ["name_txt", "unique_name"] 
+    # Using a unique index as tax_id, unique_name
+    unique_index = "index"
+    indexes = ["name_txt"] 
     
     def __init__(self, **kwargs):
         """Instance the class. Need a py2neo Graph instance"""
@@ -344,6 +359,11 @@ class TaxNamefile(TaxGraph):
     def schema(self):
         return self.graph.schema
         
+    def get_uniqueness_constraints(self, label):
+        """get unique constraints"""
+        
+        return self.schema.get_uniqueness_constraints(label)
+        
     def get_indexes(self, label):
         """Get defined indexes"""
         
@@ -354,13 +374,18 @@ class TaxNamefile(TaxGraph):
         
         try:
             indexes = self.get_indexes(TaxName.label)
+            constraints = self.get_uniqueness_constraints(TaxName.label)
             
         except AttributeError, message:
-            raise Exception("You need to connect to database before checking index: %s" %(message))
+            raise TaxGraphError("You need to connect to database before checking index: %s" %(message))
+            
+        # add unique constraints
+        if not self.unique_index in constraints:
+            self.graph.schema.create_uniqueness_constraint(TaxName.label, self.unique_index)
         
         # check and create each name index. Pay attention that indexes contains unique constraints
         for index in self.indexes:
-            if not index in indexes:
+            if not index in indexes and index != self.unique_index:
                 logger.debug("Creating index ({label},{property_key})".format(label=TaxName.label, property_key=index))
                 self.schema.create_index(TaxName.label, index)
 
@@ -376,7 +401,7 @@ class TaxNamefile(TaxGraph):
             self.check_index()
             
         except AttributeError, message:
-            raise Exception("You need to connect to database before loading from file: %s" %(message))
+            raise TaxGraphError("You need to connect to database before loading from file: %s" %(message))
         
         # debug
         logger.info("Adding names...")
@@ -408,7 +433,7 @@ class TaxNamefile(TaxGraph):
                 except py2neo.ConstraintError, message:
                     logger.error("Error for {node}-{relationship}->{name}".format(node=neo_node, relationship=relationship_name, name=neo_name))
                     tx.rollback()
-                    raise py2neo.ConstraintError(message)
+                    raise TaxGraphError(message)
                     
                 # add it to database
                 tx.create(relationship)

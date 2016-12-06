@@ -15,9 +15,11 @@ __email__ = "paolo.cozzi@ptp.it"
 __status__ = "alfa"
 
 from neotaxonomy.Neo4j import TaxGraph, TaxNode, TaxNodefile, TaxName, TaxNamefile
+from neotaxonomy.exceptions import NeoTaxonomyError, TaxGraphError
 
 # All libraries imported with import *
-__all__ = ["TaxGraph", "TaxNode", "TaxNodefile", "TaxName", "TaxNamefile"]
+__all__ = ["TaxGraph", "TaxNode", "TaxNodefile", "TaxName", "TaxNamefile", "NeoTaxonomyError", 
+           "TaxGraphError"]
 
 # Example package with a console entry point
 #def main():
