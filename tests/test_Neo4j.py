@@ -34,11 +34,15 @@ class TaxGraphTest(unittest.TestCase):
     """A class to test Graph connection classes"""
     
     def test_connect(self):
+        """Testing connection"""
+        
         taxgraph = neotaxonomy.TaxGraph(host="localhost")
         taxgraph.connect(user="neo4j", password="password")
         self.assertIsInstance(taxgraph.graph, py2neo.database.Graph)
        
     def test_noConnect(self):
+        """Testing no connection raise error"""
+        
         taxgraph = neotaxonomy.TaxGraph(host="localhost")
         taxgraph.max_attempts = 1
         self.assertRaisesRegexp(Exception, "Max attempts reached", taxgraph.connect, user="neo4j", password="neo4j")
@@ -78,7 +82,7 @@ class TaxNodefileTest(unittest.TestCase):
         
         
     def test_insertFrom(self):
-        """Testing loading data"""
+        """Testing loading nodes"""
         
         self.neo.insertFrom(self.test_nodefile)
         ref_nodes = file_len(self.test_nodefile)
@@ -86,7 +90,7 @@ class TaxNodefileTest(unittest.TestCase):
         self.assertEqual(ref_nodes, test_nodes)
         
     def test_insertFromLimit(self):
-        """Testing loading data with more transactions"""
+        """Testing loading nodes with more transactions"""
         
         self.neo.insertFrom(self.test_nodefile, limit=5)
         test_nodes = len(list(self.neo.graph.find(neotaxonomy.TaxNode.label)))
@@ -140,7 +144,7 @@ class TaxNamefileTest(unittest.TestCase):
         
         
     def test_insertFrom(self):
-        """Testing loading data"""
+        """Testing loading names"""
         
         self.neo.insertFrom(self.test_namefile)
         ref_nodes = file_len(self.test_namefile)
@@ -148,7 +152,7 @@ class TaxNamefileTest(unittest.TestCase):
         self.assertEqual(ref_nodes, test_nodes)
         
     def test_insertFromLimit(self):
-        """Testing loading data with more transactions"""
+        """Testing loading names with more transactions"""
         
         self.neo.insertFrom(self.test_namefile, limit=5)
         test_nodes = len(list(self.neo.graph.find(neotaxonomy.TaxName.label)))

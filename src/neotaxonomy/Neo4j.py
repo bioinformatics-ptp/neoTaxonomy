@@ -11,7 +11,7 @@ import types
 import py2neo
 import logging
 
-from neotaxonomy.exceptions import NeoTaxonomyError, TaxGraphError
+from neotaxonomy.exceptions import TaxGraphError
 
 # logger instance
 logger = logging.getLogger(__name__)
@@ -28,6 +28,7 @@ class TaxGraph():
     bolt = None
     
     graph = None
+    transaction = None
     
     def __init__(self, **kwargs):
         """Init class"""
@@ -80,7 +81,21 @@ class TaxGraph():
                 
             else:
                 raise TaxGraphError("Max attempts reached: %s" %(message))
+                
+    def begin(self, autocommit=False):
+        """Start a new transaction"""
+        
+        self.transaction = self.graph.begin(autocommit)
+        
+    def commit(self):
+        """Commit a transaction"""
+        
+        try:
+            self.transaction.commit()
             
+        except Exception, message:
+            raise TaxGraphError(message)
+        
 
 class TaxBase():
     """Base class for taxonomy elements"""
@@ -209,7 +224,7 @@ class TaxNodefile(TaxGraph):
         
         # get a transaction
         try:
-            tx = self.graph.begin()
+            self.begin()
             self.check_index()
             
         except AttributeError, message:
@@ -225,27 +240,27 @@ class TaxNodefile(TaxGraph):
             neo_node = my_node.getNeo4j()
             
             # add it to database
-            tx.create(neo_node)
+            self.transaction.create(neo_node)
             
             # record relationship
             self.all_relations[my_node.tax_id] = my_node.parent
 
             # test for limit
             if limit is not None and i >= (limit-1):
-                tx.commit()
+                self.commit()
                 logger.info("%s limit reached. %s nodes added" %(limit, i+1))
                 break
 
             # commit data
             if (i+1) % self.iter == 0:
-                tx.commit()
+                self.commit()
                 logger.debug("%s nodes added" %(i+1))
                 # a new transaction
-                tx = self.graph.begin()
+                self.begin()
                 
         # outside cicle
         if (i+1) % self.iter != 0:
-            tx.commit()
+            self.commit()
             logger.debug("%s nodes added" %(i+1))
             
         # closing file
@@ -261,7 +276,7 @@ class TaxNodefile(TaxGraph):
         logger.info("Adding iterations...")
         
         # get a new transaction object
-        tx = self.graph.begin()
+        self.begin()
         
         for tax_id, parent_tax_id in self.all_relations.iteritems():
             neo_nodes = selector.select(TaxNode.label, tax_id=tax_id)
@@ -281,17 +296,17 @@ class TaxNodefile(TaxGraph):
                     relationship = py2neo.Relationship(neo_parent, "PARENT", neo_node)
                     
                     # add it to database
-                    tx.create(relationship)
+                    self.transaction.create(relationship)
                     
             # commit
             if count % self.iter == 0:
-                tx.commit()
+                self.commit()
                 logger.debug("%s iterations processed" %(count))
-                tx = self.graph.begin()
+                self.begin()
                 
         # final transaction
         if count % self.iter != 0:
-            tx.commit()
+            self.commit()
             logger.debug("%s iterations processed" %(count))
             
         #debug
@@ -397,7 +412,7 @@ class TaxNamefile(TaxGraph):
         
         # get a transaction
         try:
-            tx = self.graph.begin()
+            self.begin()
             self.check_index()
             
         except AttributeError, message:
@@ -416,7 +431,7 @@ class TaxNamefile(TaxGraph):
             neo_name = my_name.getNeo4j()
             
             # add it to database
-            tx.create(neo_name)
+            self.transaction.create(neo_name)
             
             # now search node by taxa id
             neo_nodes = selector.select(TaxNode.label, tax_id=my_name.tax_id)
@@ -432,28 +447,27 @@ class TaxNamefile(TaxGraph):
                     
                 except py2neo.ConstraintError, message:
                     logger.error("Error for {node}-{relationship}->{name}".format(node=neo_node, relationship=relationship_name, name=neo_name))
-                    tx.rollback()
                     raise TaxGraphError(message)
                     
                 # add it to database
-                tx.create(relationship)
+                self.transaction.create(relationship)
             
             # test for limit
             if limit is not None and i >= (limit-1):
-                tx.commit()
+                self.commit()
                 logger.info("%s limit reached. %s names added" %(limit, i+1))
                 break
 
             # commit data
             if (i+1) % self.iter == 0:
-                tx.commit()
+                self.commit()
                 logger.debug("%s names added" %(i+1))
                 # a new transaction
-                tx = self.graph.begin()
+                self.begin()
                 
         # outside cicle
         if (i+1) % self.iter != 0:
-            tx.commit()
+            self.commit()
             logger.debug("%s names added" %(i+1))
     
         #debug
