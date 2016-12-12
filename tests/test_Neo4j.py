@@ -132,6 +132,7 @@ class TaxNamefileTest(unittest.TestCase):
         # drop indexes if they exists
         try:
             self.neo.schema.drop_uniqueness_constraint(neotaxonomy.TaxNode.label, neotaxonomy.TaxNodefile.unique_index)
+            self.neo.schema.drop_uniqueness_constraint(neotaxonomy.TaxName.label, neotaxonomy.TaxNamefile.unique_index)
             
         except py2neo.GraphError, message:
             logger.error(message)
@@ -141,7 +142,6 @@ class TaxNamefileTest(unittest.TestCase):
         neo = neotaxonomy.TaxNamefile(host="localhost", user="neo4j", password="password")
         self.assertRaisesRegexp(Exception, "You need to connect to database before checking index", neo.check_index)
         self.assertRaisesRegexp(Exception, "You need to connect to database before loading from file", neo.insertFrom, self.test_namefile)
-        
         
     def test_insertFrom(self):
         """Testing loading names"""
@@ -163,7 +163,53 @@ class TaxNamefileTest(unittest.TestCase):
         
         self.neo.insertFrom(self.test_namefile)
         self.assertRaisesRegexp(neotaxonomy.TaxGraphError, "Node .* already exists", self.neo.insertFrom, self.test_namefile)
+
+# testing functions
+class LineageTest(unittest.TestCase):
+    """A class to lineage methods"""
     
+    neo = None
+    test_namefile = os.path.join(current_path, "test_names.dmp")
+    test_nodefile = os.path.join(current_path, "test_nodes.dmp")
+    
+    def setUp(self):
+        # insert nodes before names
+        self.neo = neotaxonomy.TaxNodefile(host="localhost", user="neo4j", password="password")
+        self.neo.connect()
+        self.neo.insertFrom(self.test_nodefile)
+        
+        # Ok now instantiate the object
+        self.neo = neotaxonomy.TaxNamefile(host="localhost", user="neo4j", password="password")
+        self.neo.connect()
+        self.neo.insertFrom(self.test_namefile)
+        
+    def tearDown(self):
+        try:
+            self.neo.graph.delete_all()
+            
+        except py2neo.GraphError, message:
+            logger.error(message)
+        
+        # drop indexes if they exists
+        try:
+            self.neo.schema.drop_uniqueness_constraint(neotaxonomy.TaxNode.label, neotaxonomy.TaxNodefile.unique_index)
+            self.neo.schema.drop_uniqueness_constraint(neotaxonomy.TaxName.label, neotaxonomy.TaxNamefile.unique_index)
+            
+        except py2neo.GraphError, message:
+            logger.error(message)
+            
+    def test_getLineage(self):
+        
+        tmp = """k__Bacteria; p__Proteobacteria; c__Gammaproteobacteria; o__Enterobacteriales; f__Enterobacteriaceae; g__Escherichia; s__coli"""
+        reference = [tax.strip() for tax in tmp.split(";")]
+        
+        # query the database for E.coli
+        result = neotaxonomy.getLineage(562)
+        
+        # testing lineage
+        self.assertEqual(reference, result)
+        
 # testing library
 if __name__ == "__main__":
     unittest.main()
+

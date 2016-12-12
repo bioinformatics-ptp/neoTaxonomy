@@ -93,8 +93,8 @@ if __name__ == "__main__":
     nodefile = Nodefile("taxdump/nodes.dmp")
     namefile = Namefile("taxdump/names.dmp")
     
-    # get node for e. coli
-    nodes = nodefile.subsetByTaxID(562)
+    # get node for e. coli. taxa id 562 is a string
+    nodes = nodefile.subsetByTaxID('562')
     tax_ids = nodes.keys()
     
     names = namefile.subsetByTaxIDs(tax_ids)

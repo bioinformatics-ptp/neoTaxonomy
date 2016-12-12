@@ -472,4 +472,12 @@ class TaxNamefile(TaxGraph):
     
         #debug
         logger.info("Completed!")
-        
+
+# A function to get lineage from tax id
+def getLineage(tax_id, lineage=["superKingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]):
+    """Get lineage from tax id"""
+    
+    pass
+
+
+    
