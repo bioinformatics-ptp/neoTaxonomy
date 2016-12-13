@@ -359,7 +359,7 @@ class TaxNodefile(TaxGraph):
             logger.debug("%s iterations processed" %(count))
             
         #debug
-        logger.info("Completed!")
+        logger.info("Loading nodes completed!")
 
 
 class TaxName(TaxBase):
@@ -520,6 +520,6 @@ class TaxNamefile(TaxGraph):
             logger.debug("%s names added" %(i+1))
     
         #debug
-        logger.info("Completed!")
+        logger.info("Loading names completed!")
 
 
