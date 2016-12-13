@@ -6,6 +6,7 @@ Created on Tue Nov 29 14:02:14 2016
 @author: Paolo Cozzi <paolo.cozzi@ptp.it>
 """
 
+import re
 import time
 import types
 import py2neo
@@ -95,7 +96,55 @@ class TaxGraph():
             
         except Exception, message:
             raise TaxGraphError(message)
+            
+    # A function to get lineage from tax id
+    def getLineage(self, taxon_id, ranks=["superKingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]):
+        """Get lineage from tax id. Only specified ranks will be returned. Each rank
+        need to have a capital letter in order to by prefixed in name (eg. Species -> s__"""
         
+        # I want to add a prefix for each order in scientific name. The prefix will be
+        # the capital letter present in ranks
+        # TODO: test for no capital letter in ranks
+        pattern = re.compile("[A-Z]")
+        matches = [re.search(pattern, rank) for rank in ranks]
+        letters = [ranks[i][match.start()].lower() for i, match in enumerate(matches)]
+        lineage = [u"%s__" %(letter) for letter in letters]
+                   
+        # lower ranks for semplicity
+        ranks = [rank.lower() for rank in ranks]
+        
+        # define query
+        query = """MATCH (specie:TaxName)<-[:SCIENTIFIC_NAME]-(organism:TaxNode)<-[:PARENT*]-(parent:TaxNode)-[:SCIENTIFIC_NAME]->(parent_name:TaxName) WHERE organism.tax_id = {taxon_id} RETURN specie.name_txt, organism.rank, parent.rank, parent_name.name_txt"""
+        
+        # execute query
+        try:
+            cursor = self.graph.run(query, taxon_id=str(taxon_id))
+        
+        except AttributeError, message:
+            raise TaxGraphError("You have to connect to database before serching for lineage: %s" %(message))
+        
+        # a flag for myself
+        flag_taxon = False
+            
+        # cicle amoung cursor
+        for (tax_name, tax_rank, parent_rank, parent_name) in cursor:
+            if flag_taxon == False:
+                # consider specie and remove genere
+                if tax_rank == u"species":
+                    tax_name = tax_name.split()[-1]
+
+                if tax_rank in ranks:
+                    idx = ranks.index(tax_rank)
+                    lineage[idx]= "%s__%s" %(letters[idx], tax_name)
+                    # i found myself
+                    flag_taxon = True
+            
+            # cicle for parent
+            if parent_rank in ranks:
+                idx = ranks.index(parent_rank)
+                lineage[idx] = "%s__%s" %(letters[idx], parent_name)
+
+        return lineage
 
 class TaxBase():
     """Base class for taxonomy elements"""
@@ -473,11 +522,4 @@ class TaxNamefile(TaxGraph):
         #debug
         logger.info("Completed!")
 
-# A function to get lineage from tax id
-def getLineage(tax_id, lineage=["superKingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]):
-    """Get lineage from tax id"""
-    
-    pass
 
-
-    

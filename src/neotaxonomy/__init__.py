@@ -14,12 +14,11 @@ __maintainer__ = "Paolo Cozzi"
 __email__ = "paolo.cozzi@ptp.it"
 __status__ = "alfa"
 
-from neotaxonomy.Neo4j import TaxGraph, TaxNode, TaxNodefile, TaxName, TaxNamefile,\
-    getLineage
+from neotaxonomy.Neo4j import TaxGraph, TaxNode, TaxNodefile, TaxName, TaxNamefile
     
 from neotaxonomy.exceptions import NeoTaxonomyError, TaxGraphError
 
 # All libraries imported with import *
 __all__ = ["TaxGraph", "TaxNode", "TaxNodefile", "TaxName", "TaxNamefile", "NeoTaxonomyError", 
-           "TaxGraphError", "getLineage"]
+           "TaxGraphError"]
            

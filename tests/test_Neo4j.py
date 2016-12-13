@@ -45,7 +45,11 @@ class TaxGraphTest(unittest.TestCase):
         
         taxgraph = neotaxonomy.TaxGraph(host="localhost")
         taxgraph.max_attempts = 1
-        self.assertRaisesRegexp(Exception, "Max attempts reached", taxgraph.connect, user="neo4j", password="neo4j")
+        self.assertRaisesRegexp(neotaxonomy.TaxGraphError, "Max attempts reached", taxgraph.connect, user="neo4j", password="neo4j")
+        
+        # get lineage with no connection
+        taxgraph = neotaxonomy.TaxGraph(host="localhost")
+        self.assertRaisesRegexp(neotaxonomy.TaxGraphError, "You have to connect to database", taxgraph.getLineage, 562)
        
 class TaxNodefileTest(unittest.TestCase):
     """A class to test node data load"""
@@ -159,7 +163,7 @@ class TaxNamefileTest(unittest.TestCase):
         self.assertEqual(5, test_nodes)
         
     def test_insertFromRaises(self):
-        """Insert already inserted names raises exception"""
+        """Testing insert already inserted names raises exception"""
         
         self.neo.insertFrom(self.test_namefile)
         self.assertRaisesRegexp(neotaxonomy.TaxGraphError, "Node .* already exists", self.neo.insertFrom, self.test_namefile)
@@ -174,14 +178,17 @@ class LineageTest(unittest.TestCase):
     
     def setUp(self):
         # insert nodes before names
-        self.neo = neotaxonomy.TaxNodefile(host="localhost", user="neo4j", password="password")
-        self.neo.connect()
-        self.neo.insertFrom(self.test_nodefile)
+        neo = neotaxonomy.TaxNodefile(host="localhost", user="neo4j", password="password")
+        neo.connect()
+        neo.insertFrom(self.test_nodefile)
         
-        # Ok now instantiate the object
-        self.neo = neotaxonomy.TaxNamefile(host="localhost", user="neo4j", password="password")
-        self.neo.connect()
-        self.neo.insertFrom(self.test_namefile)
+        # insert names
+        neo = neotaxonomy.TaxNamefile(host="localhost", user="neo4j", password="password")
+        neo.connect()
+        neo.insertFrom(self.test_namefile)
+        
+        # a taxgraph object
+        self.neo = neotaxonomy.TaxNodefile(host="localhost", user="neo4j", password="password")
         
     def tearDown(self):
         try:
@@ -200,11 +207,12 @@ class LineageTest(unittest.TestCase):
             
     def test_getLineage(self):
         
-        tmp = """k__Bacteria; p__Proteobacteria; c__Gammaproteobacteria; o__Enterobacteriales; f__Enterobacteriaceae; g__Escherichia; s__coli"""
+        tmp = u"""k__Bacteria; p__Proteobacteria; c__Gammaproteobacteria; o__Enterobacterales; f__Enterobacteriaceae; g__Escherichia; s__coli"""
         reference = [tax.strip() for tax in tmp.split(";")]
         
         # query the database for E.coli
-        result = neotaxonomy.getLineage(562)
+        self.neo.connect()
+        result = self.neo.getLineage(562)
         
         # testing lineage
         self.assertEqual(reference, result)

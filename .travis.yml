@@ -7,7 +7,8 @@ services:
 
 before_install:
   - docker run -d --publish=7474:7474 --publish=7687:7687 --name neo4j --env=NEO4J_AUTH=neo4j/password neo4j:3.0
-  
+  - sleep 10
+
 python:
   # - "2.6"
   - "2.7"
