@@ -22,6 +22,59 @@ logging.getLogger("httpstream").setLevel(logging.WARNING)
 logging.getLogger("neo4j.bolt").setLevel(logging.WARNING)
 logger = logging.getLogger(program_name)
 
+def deleteall(taxgraph):
+    """Delete all node and relations in database. Inspired from 
+    https://neo4j.com/developer/kb/large-delete-transaction-best-practices-in-neo4j/"""
+    
+    progressive = 0
+    
+    query = """
+// Remove TaxNode
+MATCH (n:TaxNode)
+
+// Take the first 1k nodes and their rels (if more than 100 rels / node on average lower this number)
+WITH n LIMIT 1000
+DETACH DELETE n
+RETURN count(*)
+"""
+    
+    # execute query
+    cursor = taxgraph.graph.run(query)
+    
+    # get counts
+    counts = cursor.evaluate()
+    
+    while counts != 0:
+        progressive += counts
+        logger.debug("%s TaxNodes deleted" %(progressive))
+        cursor = taxgraph.graph.run(query)
+        counts = cursor.evaluate()
+        
+    progressive = 0
+        
+    # now a query for name
+    query = """
+// Remove TaxName
+MATCH (n:TaxName)
+
+// Take the first 1k nodes and their rels (if more than 100 rels / node on average lower this number)
+WITH n LIMIT 1000
+DETACH DELETE n
+RETURN count(*)
+"""
+    
+    # execute query
+    cursor = taxgraph.graph.run(query)
+    
+    # get counts
+    counts = cursor.evaluate()
+    
+    while counts != 0:
+        progressive += counts
+        logger.debug("%s TaxNames deleted" %(progressive))
+        cursor = taxgraph.graph.run(query)
+        counts = cursor.evaluate()
+
 # a function to fill taxonomy database
 def fillTaxonomyDB():
     """Fill taxonomy database when files are provided"""
@@ -35,10 +88,23 @@ def fillTaxonomyDB():
     parser.add_argument("--http_port", help="Database http port (def '%(default)s')", type=str, required=False, default=TaxGraph.http_port)
     parser.add_argument("--https_port", help="Database https port (def '%(default)s')", type=str, required=False, default=TaxGraph.https_port)
     parser.add_argument("--bolt_port", help="Database bold port (def '%(default)s')", type=str, required=False, default=TaxGraph.bolt_port)
+    parser.add_argument("--drop_all", help="Drop all TaxNodes and TaxNames in database", action='store_true', default=False)
     args = parser.parse_args()
     
     # debug
     logger.info("%s started" %(program_name))
+    
+    # erasing data if necessary
+    if args.drop_all is True:
+        response = raw_input('This will erase all TaxNodes and Taxnames (and their relations). Proceed [Y/n]? ')
+        if response == "Y":
+            taxgraph = TaxGraph(host=args.host, user=args.user, password=args.password, http_port=args.http_port, https_port=args.https_port, bolt_port=args.bolt_port)
+            taxgraph.connect()
+            deleteall(taxgraph)
+        
+        else:
+            logger.error("Aborted")
+            return
     
     # get a nodefile object
     logger.info("Loading nodes...")

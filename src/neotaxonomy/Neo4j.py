@@ -265,7 +265,7 @@ class TaxNodefile(TaxGraph):
             logger.debug("Creating unique index ({label},{property_key})".format(label=TaxNode.label, property_key=self.unique_index))
             self.schema.create_uniqueness_constraint(TaxNode.label, self.unique_index)
     
-    def insertFrom(self, dmp_file="nodes.dmp", limit=1000):
+    def insertFrom(self, dmp_file="nodes.dmp", limit=None):
         """Open a file to read nodes"""
         
         # open a file in reading mode
@@ -453,7 +453,7 @@ class TaxNamefile(TaxGraph):
                 logger.debug("Creating index ({label},{property_key})".format(label=TaxName.label, property_key=index))
                 self.schema.create_index(TaxName.label, index)
 
-    def insertFrom(self, dmp_file="names.dmp", limit=1000):
+    def insertFrom(self, dmp_file="names.dmp", limit=None):
         """Open a file to read names"""
         
         # open a file in reading mode

@@ -21,3 +21,11 @@ Credits
 .. _Buildout: http://www.buildout.org/
 .. _Distribute: http://pypi.python.org/pypi/distribute
 .. _`modern-package-template`: http://pypi.python.org/pypi/modern-package-template
+
+.. _neo4j_docker: https://neo4j.com/developer/docker/
+.. _neo4j_docker2: http://neo4j.com/docs/operations-manual/current/installation/docker/
+.. _neo4j_guides: https://neo4j.com/developer/get-started/
+.. _neo4j_python: https://neo4j.com/developer/python/
+.. _neo4j_operation: http://neo4j.com/docs/operations-manual/current/
+.. _neo4j_developer: http://neo4j.com/docs/developer-manual/current/
+.. _py2neo: http://py2neo.org/v3/#
