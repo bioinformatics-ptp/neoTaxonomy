@@ -1,26 +1,34 @@
-This file requires editing
-==========================
+neoTaxonomy
+===========
 
-Note to the author: Please add something informative to this README *before*
-releasing your software, as `a little documentation goes a long way`_.  Both
-README.rst (this file) and NEWS.txt (release notes) will be included in your
-package metadata which gets displayed in the PyPI page for your project.
+.. image:: https://travis-ci.org/bioinformatics-ptp/neoTaxonomy.svg?branch=master
+    :target: https://travis-ci.org/bioinformatics-ptp/neoTaxonomy
 
-You can take a look at the README.txt of other projects, such as repoze.bfg
-(http://bfg.repoze.org/trac/browser/trunk/README.txt) for some ideas.
+``neoTaxonomy`` is python API to deal with NCBI taxonomy in a neo4j database.
 
-.. _`a little documentation goes a long way`: http://www.martinaspeli.net/articles/a-little-documentation-goes-a-long-way
-
-Credits
+License
 -------
 
-- `Distribute`_
-- `Buildout`_
-- `modern-package-template`_
+neoTaxonomy - A python API to deal with NCBI taxonomy in a neo4j database
+Copyright (C) 2016 Paolo Cozzi <paolo.cozzi@ptp.it>
 
-.. _Buildout: http://www.buildout.org/
-.. _Distribute: http://pypi.python.org/pypi/distribute
-.. _`modern-package-template`: http://pypi.python.org/pypi/modern-package-template
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Installation
+------------
+
+
 
 .. _neo4j_docker: https://neo4j.com/developer/docker/
 .. _neo4j_docker2: http://neo4j.com/docs/operations-manual/current/installation/docker/
