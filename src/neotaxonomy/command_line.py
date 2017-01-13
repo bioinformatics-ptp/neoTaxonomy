@@ -3,7 +3,7 @@
 """
 
 neoTaxonomy - A python API to deal with NCBI taxonomy in a neo4j database
-Copyright (C) 2016 Paolo Cozzi <paolo.cozzi@ptp.it>
+Copyright (C) 2016-2017 Paolo Cozzi <paolo.cozzi@ptp.it>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -103,9 +103,9 @@ def fillTaxonomyDB():
     parser.add_argument("--host", help="Database host (def '%(default)s')", type=str, required=False, default=TaxGraph.host)
     parser.add_argument("--user", help="Database user (def '%(default)s')", type=str, required=False, default=TaxGraph.user)
     parser.add_argument("--password", help="Database password (def '%(default)s')", type=str, required=False, default=TaxGraph.password)
-    parser.add_argument("--http_port", help="Database http port (def '%(default)s')", type=str, required=False, default=TaxGraph.http_port)
-    parser.add_argument("--https_port", help="Database https port (def '%(default)s')", type=str, required=False, default=TaxGraph.https_port)
-    parser.add_argument("--bolt_port", help="Database bold port (def '%(default)s')", type=str, required=False, default=TaxGraph.bolt_port)
+    parser.add_argument("--http_port", help="Database http port (def '%(default)s')", type=int, required=False, default=TaxGraph.http_port)
+    parser.add_argument("--https_port", help="Database https port (def '%(default)s')", type=int, required=False, default=TaxGraph.https_port)
+    parser.add_argument("--bolt_port", help="Database bold port (def '%(default)s')", type=int, required=False, default=TaxGraph.bolt_port)
     parser.add_argument("--drop_all", help="Drop all TaxNodes and TaxNames in database", action='store_true', default=False)
     args = parser.parse_args()
     
@@ -119,9 +119,13 @@ def fillTaxonomyDB():
             taxgraph = TaxGraph(host=args.host, user=args.user, password=args.password, http_port=args.http_port, https_port=args.https_port, bolt_port=args.bolt_port)
             taxgraph.connect()
             deleteall(taxgraph)
+            
+        elif response.lower() == "n":
+            logger.info("No changes made. Exiting")
+            return
         
         else:
-            logger.error("Aborted")
+            logger.error("Only [Y/n] values allowed. Aborted")
             return
     
     # get a nodefile object

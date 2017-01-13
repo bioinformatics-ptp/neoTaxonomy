@@ -93,3 +93,7 @@ ENV/
 
 # ignoring directories
 taxdump/
+
+# backup files
+*~
+

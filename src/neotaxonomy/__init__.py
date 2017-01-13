@@ -2,7 +2,7 @@
 """
 
 neoTaxonomy - A python API to deal with NCBI taxonomy in a neo4j database
-Copyright (C) 2016 Paolo Cozzi <paolo.cozzi@ptp.it>
+Copyright (C) 2016-2017 Paolo Cozzi <paolo.cozzi@ptp.it>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ Created on Tue Nov 29 12:47:56 2016
 """
 
 __author__ = "Paolo Cozzi"
-__copyright__ = "Copyright 2016, Paolo Cozzi"
+__copyright__ = "Copyright 2016-2017, Paolo Cozzi"
 __credits__ = ["Paolo Cozzi"]
 __license__ = "GNU GPLv3"
 __version__ = "0.1.0"
