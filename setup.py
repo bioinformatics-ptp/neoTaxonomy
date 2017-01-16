@@ -165,6 +165,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts':
-            ['fillTaxonomyDB=neotaxonomy.command_line:fillTaxonomyDB']
+            ['fillTaxonomyDB=neotaxonomy.command_line:fillTaxonomyDB',
+             'taxaid2lineage=neotaxonomy.command_line:taxaid2lineage']
     },
 )

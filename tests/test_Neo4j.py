@@ -235,6 +235,18 @@ class LineageTest(unittest.TestCase):
         # testing lineage
         self.assertEqual(reference, result)
         
+    def test_getFullLineage(self):
+        
+        tmp = u"""cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Enterobacteriaceae;Escherichia;Escherichia coli"""
+        reference = [tax.strip() for tax in tmp.split(";")]
+                     
+        # query the database for E.coli
+        self.neo.connect()
+        result = self.neo.getFullLineage(562)
+        
+        # testing lineage
+        self.assertEqual(reference, result)
+        
 # testing library
 if __name__ == "__main__":
     unittest.main()

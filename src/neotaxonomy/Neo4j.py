@@ -131,15 +131,8 @@ class TaxGraph():
         # lower ranks for semplicity
         ranks = [rank.lower() for rank in ranks]
         
-        # define query
-        query = """MATCH (specie:TaxName)<-[:SCIENTIFIC_NAME]-(organism:TaxNode)<-[:PARENT*]-(parent:TaxNode)-[:SCIENTIFIC_NAME]->(parent_name:TaxName) WHERE organism.tax_id = {taxon_id} RETURN specie.name_txt, organism.rank, parent.rank, parent_name.name_txt"""
-        
-        # execute query
-        try:
-            cursor = self.graph.run(query, taxon_id=str(taxon_id))
-        
-        except AttributeError, message:
-            raise TaxGraphError("You have to connect to database before serching for lineage: %s" %(message))
+        # call function to do query
+        cursor = self.__query_lineage(taxon_id)
         
         # a flag for myself
         flag_taxon = False
@@ -161,8 +154,55 @@ class TaxGraph():
             if parent_rank in ranks:
                 idx = ranks.index(parent_rank)
                 lineage[idx] = "%s__%s" %(letters[idx], parent_name)
+                
+        # closing cursor
+        cursor.close()
 
         return lineage
+        
+    # A function to get full lineage
+    def getFullLineage(self, taxon_id):
+        """Get full lineage for a taxa id"""
+        
+        # initalize variable
+        lineage = []
+        
+        # call function to do query
+        cursor = self.__query_lineage(taxon_id)
+        
+        # a flag for myself
+        flag_taxon = False
+            
+        # cicle amoung cursor
+        for (tax_name, tax_rank, parent_rank, parent_name) in cursor:
+            # insert the leaf node of lineage
+            if flag_taxon == False:
+                lineage.insert(0, tax_name)
+                flag_taxon = True
+            
+            # process the parent
+            lineage.insert(0, parent_name)
+                
+        # closing cursor
+        cursor.close()
+
+        return lineage
+        
+    def __query_lineage(self, taxon_id):
+        """Internal query for a taxa"""
+        
+        # define query
+        query = """MATCH (specie:TaxName)<-[:SCIENTIFIC_NAME]-(organism:TaxNode)<-[:PARENT*]-(parent:TaxNode)-[:SCIENTIFIC_NAME]->(parent_name:TaxName) WHERE organism.tax_id = {taxon_id} RETURN specie.name_txt, organism.rank, parent.rank, parent_name.name_txt"""
+        
+        # execute query
+        try:
+            cursor = self.graph.run(query, taxon_id=str(taxon_id))
+        
+        except AttributeError, message:
+            raise TaxGraphError("You have to connect to database before serching for lineage: %s" %(message))
+            
+        return cursor
+        
 
 class TaxBase():
     """Base class for taxonomy elements"""
@@ -536,6 +576,9 @@ class TaxNamefile(TaxGraph):
         if (i+1) % self.iter != 0:
             self.commit()
             logger.debug("%s names added" %(i+1))
+            
+        # closing file
+        handle.close()
     
         #debug
         logger.info("Loading names completed!")

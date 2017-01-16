@@ -142,4 +142,31 @@ def fillTaxonomyDB():
     
     #debug
     logger.info("%s finished" %(program_name))
+
+# a function to get taxonomies from input
+def taxaid2lineage():
+    """Get lineage from taxa id(s)"""
+
+    parser = argparse.ArgumentParser(description='Get lineage from taxa id(s)')
+    parser.add_argument("--host", help="Database host (def '%(default)s')", type=str, required=False, default=TaxGraph.host)
+    parser.add_argument("--user", help="Database user (def '%(default)s')", type=str, required=False, default=TaxGraph.user)
+    parser.add_argument("--password", help="Database password (def '%(default)s')", type=str, required=False, default=TaxGraph.password)
+    parser.add_argument("--http_port", help="Database http port (def '%(default)s')", type=int, required=False, default=TaxGraph.http_port)
+    parser.add_argument("--https_port", help="Database https port (def '%(default)s')", type=int, required=False, default=TaxGraph.https_port)
+    parser.add_argument("--bolt_port", help="Database bold port (def '%(default)s')", type=int, required=False, default=TaxGraph.bolt_port)
+    parser.add_argument('taxa', nargs='+', help='taxa id (or ids)')
+    args = parser.parse_args()
+    
+    # debug
+    logger.debug("%s started" %(program_name))
+    
+    db = TaxGraph(host=args.host, user=args.user, password=args.password, http_port=args.http_port, https_port=args.https_port, bolt_port=args.bolt_port)
+    db.connect()
+    
+    for taxa in args.taxa:
+        lineage = db.getLineage(taxa)
+        print "%s\t" %(taxa) + ";".join(lineage)
+    
+    
+        
     
