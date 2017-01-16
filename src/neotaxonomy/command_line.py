@@ -29,7 +29,7 @@ import sys
 import logging
 import argparse
 
-from neotaxonomy import TaxGraph, TaxNodefile, TaxNamefile
+from neotaxonomy import TaxGraph, TaxNodefile, TaxNamefile, TaxGraphError
 
 # programname
 program_name = os.path.basename(sys.argv[0])
@@ -154,6 +154,9 @@ def taxaid2Lineage():
     parser.add_argument("--http_port", help="Database http port (def '%(default)s')", type=int, required=False, default=TaxGraph.http_port)
     parser.add_argument("--https_port", help="Database https port (def '%(default)s')", type=int, required=False, default=TaxGraph.https_port)
     parser.add_argument("--bolt_port", help="Database bold port (def '%(default)s')", type=int, required=False, default=TaxGraph.bolt_port)
+    parser.add_argument("--full", help="Get NCBI full taxonomy", action='store_true', default=False)
+    parser.add_argument("--abbreviated", help="Get NCBI abbreviated taxonomy", action='store_true', default=False)
+    parser.add_argument("--no_root", help="Exclude root node from NCBI taxonomy", action="store_true", default=False)
     parser.add_argument('taxa', nargs='+', help='taxa id (or ids)')
     args = parser.parse_args()
     
@@ -164,9 +167,23 @@ def taxaid2Lineage():
     db.connect()
     
     for taxa in args.taxa:
-        lineage = db.getLineage(taxa)
+        lineage = []
+        
+        try:
+            # check if I need NCBI taxonomy
+            if args.full is True or args.abbreviated is True:
+                lineage = db.getFullLineage(taxa, args.abbreviated)
+                
+                if args.no_root is True:
+                    lineage.remove("root")
+                
+            else:
+                lineage = db.getLineage(taxa)
+                
+        except TaxGraphError, message:
+            logger.error(message)
+            
         print "%s\t" %(taxa) + ";".join(lineage)
     
     
         
-    

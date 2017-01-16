@@ -142,10 +142,6 @@ class TaxGraph():
             
         # cicle amoung cursor
         for (tax_name, tax_rank, parent_rank, parent_name) in cursor:
-            # avoid root
-            if tax_name == "root" or parent_name == "root":
-                continue
-
             # count a result
             count += 1
             
@@ -175,14 +171,14 @@ class TaxGraph():
         return lineage
         
     # A function to get full lineage
-    def getFullLineage(self, taxon_id):
-        """Get full lineage for a taxa id"""
+    def getFullLineage(self, taxon_id, abbreviated=False):
+        """Get full lineage for a taxa id (abbreviated or not)"""
         
         # initalize variable
         lineage = []
         
         # call function to do query
-        cursor = self.__query_lineage(taxon_id)
+        cursor = self.__query_lineage(taxon_id, abbreviated)
         
         # a flag for myself
         flag_taxon = False
@@ -192,10 +188,6 @@ class TaxGraph():
             
         # cicle amoung cursor
         for (tax_name, tax_rank, parent_rank, parent_name) in cursor:
-            # avoid root
-            if tax_name == "root" or parent_name == "root":
-                continue
-
             # count a result
             count += 1
             
@@ -216,11 +208,15 @@ class TaxGraph():
 
         return lineage
         
-    def __query_lineage(self, taxon_id):
+    def __query_lineage(self, taxon_id, abbreviated=False):
         """Internal query for a taxa"""
         
-        # define query
-        query = """MATCH (specie:TaxName)<-[:SCIENTIFIC_NAME]-(organism:TaxNode)<-[:PARENT*]-(parent:TaxNode)-[:SCIENTIFIC_NAME]->(parent_name:TaxName) WHERE organism.tax_id = {taxon_id} RETURN specie.name_txt, organism.rank, parent.rank, parent_name.name_txt"""
+        # define query. Abbreviated or not (get full lineage or the impotant lineage)
+        if abbreviated is True:
+            query = """MATCH (specie:TaxName)<-[:SCIENTIFIC_NAME]-(organism:TaxNode)<-[:PARENT*]-(parent:TaxNode)-[:SCIENTIFIC_NAME]->(parent_name:TaxName) WHERE organism.tax_id = {taxon_id} AND parent.hidden_flag='0' RETURN specie.name_txt, organism.rank, parent.rank, parent_name.name_txt"""
+        
+        else:
+            query = """MATCH (specie:TaxName)<-[:SCIENTIFIC_NAME]-(organism:TaxNode)<-[:PARENT*]-(parent:TaxNode)-[:SCIENTIFIC_NAME]->(parent_name:TaxName) WHERE organism.tax_id = {taxon_id} RETURN specie.name_txt, organism.rank, parent.rank, parent_name.name_txt"""
         
         # execute query
         try:

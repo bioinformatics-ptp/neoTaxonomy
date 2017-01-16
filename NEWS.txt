@@ -6,6 +6,14 @@
 News
 ====
 
+0.1.1
+-----
+
+*Release date: UNRELEASED*
+
+* taxaid2Lineage: a script to get Lineage from multiple taxa ids
+* deal with NCBI full and abbreviated taxonomy
+
 0.1.0
 ------
 

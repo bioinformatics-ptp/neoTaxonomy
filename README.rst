@@ -88,5 +88,19 @@ An example of python program to get lineage by taxon_id:
   db.connect()
 
   # 562 is the E. Coli taxon id
+
+  # get lineage only for ["superKingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"] (default)
   print db.getLineage(562)
   # [u'k__Bacteria', u'p__Proteobacteria', u'c__Gammaproteobacteria', u'o__Enterobacterales', u'f__Enterobacteriaceae', u'g__Escherichia', u's__coli']
+
+  # get only genus and species for E.Coli
+  print db.getLineage(562, ranks=["Genus", "Species"])
+  [u'g__Escherichia', u's__coli']
+
+  # get full NCBI taxonomy
+  print db.getFullLineage(562)
+  # [u'root', u'cellular organisms', u'Bacteria', u'Proteobacteria', u'Gammaproteobacteria', u'Enterobacterales', u'Enterobacteriaceae', u'Escherichia', u'Escherichia coli']
+
+  # get abbreviated NCBI taxonomy
+  print db.getFullLineage(562, abbreviated=True)
+  # [u'root', u'Bacteria', u'Proteobacteria', u'Gammaproteobacteria', u'Enterobacterales', u'Enterobacteriaceae', u'Escherichia', u'Escherichia coli']
