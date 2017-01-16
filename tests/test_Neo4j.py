@@ -235,6 +235,15 @@ class LineageTest(unittest.TestCase):
         # testing lineage
         self.assertEqual(reference, result)
         
+    def test_getNoLineage(self):
+        # query the database for Homo sapiens (not included in test)
+        
+        self.neo.connect()
+        
+        # testing lineage
+        self.assertRaisesRegexp(neotaxonomy.TaxGraphError, "No lineage found for", self.neo.getLineage, 9606)
+        
+        
     def test_getFullLineage(self):
         
         tmp = u"""cellular organisms;Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Enterobacteriaceae;Escherichia;Escherichia coli"""
@@ -246,6 +255,14 @@ class LineageTest(unittest.TestCase):
         
         # testing lineage
         self.assertEqual(reference, result)
+        
+    def test_getNoFullLineage(self):
+        # query the database for Homo sapiens (not included in test)
+        
+        self.neo.connect()
+        
+        # testing lineage
+        self.assertRaisesRegexp(neotaxonomy.TaxGraphError, "No lineage found for", self.neo.getFullLineage, 9606)
         
 # testing library
 if __name__ == "__main__":

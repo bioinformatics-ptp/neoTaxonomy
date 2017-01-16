@@ -136,9 +136,19 @@ class TaxGraph():
         
         # a flag for myself
         flag_taxon = False
+        
+        # count results processed
+        count = 0
             
         # cicle amoung cursor
         for (tax_name, tax_rank, parent_rank, parent_name) in cursor:
+            # avoid root
+            if tax_name == "root" or parent_name == "root":
+                continue
+
+            # count a result
+            count += 1
+            
             if flag_taxon == False:
                 # consider specie and remove genere
                 if tax_rank == u"species":
@@ -157,6 +167,10 @@ class TaxGraph():
                 
         # closing cursor
         cursor.close()
+        
+        # check number of results
+        if count == 0:
+            raise TaxGraphError("No lineage found for %s" %(taxon_id))
 
         return lineage
         
@@ -172,9 +186,19 @@ class TaxGraph():
         
         # a flag for myself
         flag_taxon = False
+        
+        # count results processed
+        count = 0
             
         # cicle amoung cursor
         for (tax_name, tax_rank, parent_rank, parent_name) in cursor:
+            # avoid root
+            if tax_name == "root" or parent_name == "root":
+                continue
+
+            # count a result
+            count += 1
+            
             # insert the leaf node of lineage
             if flag_taxon == False:
                 lineage.insert(0, tax_name)
@@ -185,6 +209,10 @@ class TaxGraph():
                 
         # closing cursor
         cursor.close()
+        
+        # check number of results
+        if count == 0:
+            raise TaxGraphError("No lineage found for %s" %(taxon_id))
 
         return lineage
         

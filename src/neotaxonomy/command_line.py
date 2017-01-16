@@ -144,7 +144,7 @@ def fillTaxonomyDB():
     logger.info("%s finished" %(program_name))
 
 # a function to get taxonomies from input
-def taxaid2lineage():
+def taxaid2Lineage():
     """Get lineage from taxa id(s)"""
 
     parser = argparse.ArgumentParser(description='Get lineage from taxa id(s)')

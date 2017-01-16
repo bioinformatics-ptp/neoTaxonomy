@@ -166,6 +166,6 @@ setup(
     entry_points={
         'console_scripts':
             ['fillTaxonomyDB=neotaxonomy.command_line:fillTaxonomyDB',
-             'taxaid2lineage=neotaxonomy.command_line:taxaid2lineage']
+             'taxaid2Lineage=neotaxonomy.command_line:taxaid2Lineage']
     },
 )
