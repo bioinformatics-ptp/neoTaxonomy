@@ -9,7 +9,7 @@ News
 0.1.1
 -----
 
-*Release date: UNRELEASED*
+*Release date: 17-Jan-2017*
 
 * taxaid2Lineage: a script to get Lineage from multiple taxa ids
 * deal with NCBI full and abbreviated taxonomy

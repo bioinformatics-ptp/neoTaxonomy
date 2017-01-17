@@ -35,7 +35,7 @@ from neotaxonomy import TaxGraph, TaxNodefile, TaxNamefile, TaxGraphError
 program_name = os.path.basename(sys.argv[0])
 
 # get a logger with a defined name
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logging.getLogger("httpstream").setLevel(logging.WARNING)
 logging.getLogger("neo4j.bolt").setLevel(logging.WARNING)
 logger = logging.getLogger(program_name)
@@ -161,7 +161,7 @@ def taxaid2Lineage():
     args = parser.parse_args()
     
     # debug
-    logger.debug("%s started" %(program_name))
+    logger.info("%s started" %(program_name))
     
     db = TaxGraph(host=args.host, user=args.user, password=args.password, http_port=args.http_port, https_port=args.https_port, bolt_port=args.bolt_port)
     db.connect()
@@ -184,6 +184,9 @@ def taxaid2Lineage():
             logger.error(message)
             
         print "%s\t" %(taxa) + ";".join(lineage)
+        
+    # debug
+    logger.info("%s finished" %(program_name))
     
     
         
